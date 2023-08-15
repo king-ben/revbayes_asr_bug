@@ -1,0 +1,53 @@
+#NEXUS
+[Data written by write.nexus.data.R, Mon Aug 14 15:41:16 2023]
+BEGIN DATA;
+  DIMENSIONS NTAX=44 NCHAR=1;
+  FORMAT DATATYPE=STANDARD MISSING=? GAP=- INTERLEAVE=NO symbols="0123456789";
+  MATRIX
+    Ahamb                    0
+    Angavae                  ?
+    Atchin                   2
+    Aulua                    4
+    Avava                    0
+    Avok                     5
+    Batarxopu                2
+    Burmbar_Denggan          5
+    EspiegelsBay             2
+    Larevat                  ?
+    LetemboiRepanbitip       4
+    MaluaBay                 2
+    Mandri                   0
+    Mbwenelang               5
+    Mpotovoro                ?
+    Naahai                   4
+    Nahavaq                  3
+    Najit                    2
+    Naman                    ?
+    Nasarian                 6
+    Nasvang                  0
+    Nati                     3
+    Navwien                  4
+    Nese                     2
+    Neveei                   2
+    Neverver                 0
+    Ninde                    0
+    Nisvai                   0
+    Nitita                   ?
+    Nombotkote               2
+    Pangkumu_Rerep           5
+    PortSandwich_Lamap       4
+    Siviti_Njav              2
+    Tape                     ?
+    Tesmbol                  2
+    Tirax                    2
+    Uliveo_Maskelynes        4
+    Unua                     ?
+    Uripiv                   ?
+    Vao                      2
+    VenenTaut_BigNambas      2
+    Vivti                    ?
+    Vovo                     2
+    WalaRano                 2
+  ;
+END;
+

@@ -1,0 +1,112 @@
+# https://github.com/revbayes/revbayes_tutorial/tree/master/RB_AncestralStates_Tutorial
+
+
+filenames <- v("data/bad.nex", "data/bone.nex", "data/branch.nex", "data/dull_blunt.nex", "data/fire.nex", "data/kill.nex", "data/lake.nex", "data/smell.nex", "data/squeeze.nex", "data/swell.nex", "data/tail.nex")
+nwords <- filenames.size()
+
+
+for(i in 1:nwords){data[i] = readCharacterData(filenames[i])}
+
+treetrace = readTreeTrace("combinedtrees.txt", burnin=0, nexus=FALSE)
+
+psi ~ dnEmpiricalTree(treetrace)
+
+# rate of change
+lambda ~ dnExponential(100)
+
+##############
+#frequencies
+##############
+
+#relatve frequencies of trills vs no trills
+tr <- v(0.5, 0.5)
+
+#each cognate has equal stable frequencies
+trfreq := tr/8
+otherfreq = 1/8
+
+freqs := Simplex(trfreq[1], trfreq[2], otherfreq, otherfreq, otherfreq, otherfreq, otherfreq, otherfreq, otherfreq)
+
+###########
+#rates
+###########
+
+rate_prior <- v(1,1)
+rate ~ dnDirichlet(rate_prior)
+
+rates := Simplex(rate[1], rate[2], rate[2], rate[2], rate[2], rate[2], rate[2], rate[2], rate[2], rate[2], rate[2], rate[2], rate[2], rate[2], rate[2], rate[2], rate[2], rate[2], rate[2], rate[2], rate[2], rate[2], rate[2], rate[2], rate[2], rate[2], rate[2], rate[2], rate[2], rate[2], rate[2], rate[2], rate[2], rate[2], rate[2], rate[2])
+
+
+Q := fnGTR(rates, freqs)
+
+root_frequencies <- simplex(0.5,0.5,1,1,1,1,1,1,1)
+
+############
+# rates variation between words
+##############
+
+word_rate_raw ~ dnDirichlet( rep(2.0, nwords) )
+word_rate_mult := word_rate_raw * nwords
+word_rate := word_rate_mult * lambda
+
+
+##############
+# set up moves
+#############
+
+mi = 1
+moves[mi++] = mvScale(lambda) 
+#moves[mi++] = mvSimplexElementScale(tr, alpha=10, weight=3)
+moves[mi++] = mvSimplexElementScale(rate, alpha=10, weight=3)
+moves[mi++] = mvDirichletSimplex(word_rate_raw, alpha=1.0, weight=9.0)
+moves[mi++] = mvEmpiricalTree( psi, weight=2, metropolisHastings=FALSE )
+
+
+###############
+# create the model
+###############
+
+for(i in 1:nwords){morpho_ctmc[i] ~ dnPhyloCTMC(Q=Q, tree=psi, rootFreq=root_frequencies, branchRates=word_rate[i], type="Standard")}
+for(i in 1:nwords){morpho_ctmc[i].clamp(data[i])}
+
+mymodel = model(Q)
+
+# create the monitors
+monitors[1] = mnScreen(printgen=5, lambda, tr)
+monitors[2] = mnFile(filename="output/trace.log", printgen=5, lambda, tr, rate, word_rate_mult)
+monitors[3] = mnFile(filename="output/treelog.trees", printgen=5, psi)
+monitors[4] = mnJointConditionalAncestralState(filename="output/anc_bad.log",printgen=5, tree=psi, ctmc=morpho_ctmc[1], type="Standard")
+monitors[5] = mnJointConditionalAncestralState(filename="output/anc_bone.log",printgen=5, tree=psi, ctmc=morpho_ctmc[2], type="Standard")
+monitors[6] = mnJointConditionalAncestralState(filename="output/anc_branch.log",printgen=5, tree=psi, ctmc=morpho_ctmc[3], type="Standard")
+monitors[7] = mnJointConditionalAncestralState(filename="output/anc_dull_blunt.log",printgen=5, tree=psi, ctmc=morpho_ctmc[4], type="Standard")
+monitors[8] = mnJointConditionalAncestralState(filename="output/anc_fire.log",printgen=5, tree=psi, ctmc=morpho_ctmc[5], type="Standard")
+monitors[9] = mnJointConditionalAncestralState(filename="output/anc_kill.log",printgen=5, tree=psi, ctmc=morpho_ctmc[6], type="Standard")
+monitors[10] = mnJointConditionalAncestralState(filename="output/anc_lake.log",printgen=5, tree=psi, ctmc=morpho_ctmc[7], type="Standard")
+monitors[11] = mnJointConditionalAncestralState(filename="output/anc_smell.log",printgen=5, tree=psi, ctmc=morpho_ctmc[8], type="Standard")
+monitors[12] = mnJointConditionalAncestralState(filename="output/anc_squeeze.log",printgen=5, tree=psi, ctmc=morpho_ctmc[9], type="Standard")
+monitors[13] = mnJointConditionalAncestralState(filename="output/anc_swell.log",printgen=5, tree=psi, ctmc=morpho_ctmc[10], type="Standard")
+monitors[14] = mnJointConditionalAncestralState(filename="output/anc_tail.log",printgen=5, tree=psi, ctmc=morpho_ctmc[11], type="Standard")
+
+###############
+# run MCMC analysis
+###############
+
+# set up mcmc
+mymcmc = mcmc(mymodel, monitors, moves)
+mymcmc.run(2000)
+
+# summarise on mcc tree
+mcc <- readTrees("mcctree.txt")[1]
+ancestral_state_tree_trace = readAncestralStateTreeTrace("output/treelog.trees")
+
+
+filenames <- v("output/anc_bad.log", "output/anc_bone.log", "output/anc_branch.log", "output/anc_dull_blunt.log", "output/anc_fire.log", "output/anc_kill.log", "output/anc_lake.log", "output/anc_smell.log", "output/anc_squeeze.log", "output/anc_swell.log", "output/anc_tail.log")
+annotated <- v("annotated_trees/annotated_bad.log", "annotated_trees/annotated_bone.log", "annotated_trees/annotated_branch.log", "annotated_trees/annotated_dull_blunt.log", "annotated_trees/annotated_fire.log", "annotated_trees/annotated_kill.log", "annotated_trees/annotated_lake.log", "annotated_trees/annotated_smell.log", "annotated_trees/annotated_squeeze.log", "annotated_trees/annotated_swell.log", "annotated_trees/annotated_tail.log")
+
+nwords <- filenames.size()
+
+for(i in 1:nwords){
+	ancestral_state_trace = readAncestralStateTrace(filenames[i])
+	ancestralStateTree(mcc, ancestral_state_trace, ancestral_state_tree_trace, annotated[i])
+}
+
